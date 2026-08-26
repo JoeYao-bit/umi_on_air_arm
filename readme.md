@@ -113,6 +113,7 @@ reach goal position
 注意：通过梯度下降的思路找逆解，因此目标位置不应偏离初始位置太远，不然容易找逆解失败
 
 代码仓库：
-git@github.com:JoeYao-bit/UMI-On-Air-arm.git
 
-git@github.com:JoeYao-bit/umi_arm_msg.git
+正逆运动学算法：git@github.com:JoeYao-bit/umi_on_air_arm.git
+
+消息类型：git@github.com:JoeYao-bit/umi_arm_msg.git
