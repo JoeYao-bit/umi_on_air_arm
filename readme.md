@@ -3,72 +3,6 @@
 轨迹生成找王子荣
 关节角度指令执行找张武松
 
-基于acados开发
-
-安装acados教程
-
-## 一、安装步骤
-
-### 1. 系统依赖
-
-```
-sudo apt update
-sudo apt install git cmake gcc gfortran libopenblas-dev liblapack-dev python3-pip python3-venv
-```
-
-### 2. 下载 acados 源码
-
-```
-git clone https://github.com/acados/acados.git
-cd acados
-git submodule update --recursive --init
-```
-
-### 3. 创建虚拟环境（推荐，避免污染系统 python）
-
-```
-python3 -m venv venv_acados
-source venv_acados/bin/activate
-```
-
-### 4. 安装 python 依赖
-
-```
-pip install casadi numpy scipy matplotlib meshcat pinocchio
-pip install -e ./interfaces/acados_template
-```
-
-### 5. Cmake 编译 acados C 库
-
-```
-mkdir build && cd build
-cmake .. -DACADOS_WITH_QPOASES=ON -DACADOS_WITH_HPIPM=ON -DACADOS_WITH_OSQP=ON
-make -j$(nproc)
-```
-
-### 6. 设置环境变量（每次打开终端要 source，或者写到～/.bashrc）
-
-```
-# 在acados根目录执行
-export ACADOS_SOURCE_DIR=$(pwd)
-export LD_LIBRARY_PATH=$ACADOS_SOURCE_DIR/build/lib:$LD_LIBRARY_PATH
-```
-
-> 
-> 写到`~/.bashrc`末尾永久生效：
-
-```
-echo 'export ACADOS_SOURCE_DIR="$HOME/xxx/acados"' >> ~/.bashrc
-echo 'export LD_LIBRARY_PATH=$ACADOS_SOURCE_DIR/build/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
-source ~/.bashrc
-```
-
-✅验证安装
-
-```
-python -c "import acados_template; print('acados import ok')"
-```
-
 臂所在方向为正前方
 
 张武松所使用的系统为ubuntu 22.04，c++代码
@@ -117,3 +51,18 @@ reach goal position
 正逆运动学算法：git@github.com:JoeYao-bit/umi_on_air_arm.git
 
 消息类型：git@github.com:JoeYao-bit/umi_arm_msg.git
+
+部署需要更新子模块安装依赖项
+
+agx01
+
+source工作空间
+
+source /home/agx01/umi_arm_yz_ws/install/setup.bash
+
+
+安装g2o
+
+sudo apt install libeigen3-dev cmake libsparsehash-dev libsuitesparse-dev libqglviewer-dev-qt5 qtbase5-dev libqt5opengl5-dev git
+
+

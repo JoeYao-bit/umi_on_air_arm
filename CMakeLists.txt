@@ -20,15 +20,11 @@ find_package(Eigen3 REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(freeNav-base)
-
 include_directories(
     include
     ${EIGEN3_INCLUDE_DIRS}
 )
 
-add_executable(main_demo src/main_demo.cpp src/arm_3dof.cpp)
-target_link_libraries(main_demo freeNav-base)
 
 add_executable(arm_ik_node src/IK_node.cpp src/arm_3dof.cpp)
 
@@ -38,7 +34,6 @@ ament_target_dependencies(arm_ik_node
 )
 
 install(TARGETS
-  main_demo  
   arm_ik_node
   DESTINATION lib/${PROJECT_NAME}
 )

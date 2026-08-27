@@ -20,11 +20,6 @@ Eigen::Vector3d scorpion3_fk(const Eigen::Vector3d& q, const Scorpion3Param& par
                + param.l2 * std::cos(phi2)
                + param.l3 * std::cos(phi3);
 
-//    double z = param.l0
-//               + param.l1 * std::sin(phi1)
-//               + param.l2 * std::sin(phi2)
-//               + param.L3g() * std::sin(phi3);
-
     double z = param.l1 * std::sin(phi1)
                + param.l2 * std::sin(phi2)
                + param.l3 * std::sin(phi3);
