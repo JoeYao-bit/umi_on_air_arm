@@ -32,37 +32,37 @@ private:
         Eigen::Vector3d p_des(msg->x_des, msg->y_des, msg->z_des);
 
 
-        RCLCPP_INFO(this->get_logger(),
-            "ik receve init joint angle[%.3f, %.3f, %.3f], targe position[%.3f, %.3f, %.3f]", q_init(0), q_init(1), q_init(2), p_des(0), p_des(1), p_des(2));
+        // RCLCPP_INFO(this->get_logger(),
+        //     "ik receve init joint angle[%.3f, %.3f, %.3f], targe position[%.3f, %.3f, %.3f]", q_init(0), q_init(1), q_init(2), p_des(0), p_des(1), p_des(2));
  
 
-        Eigen::Vector3d q_sol = scorpion3_ik_nullspace(p_des, q_init);
+        // Eigen::Vector3d q_sol = scorpion3_ik_nullspace(p_des, q_init);
         
-        Eigen::Vector3d p_check = scorpion3_fk(q_sol);
+        // Eigen::Vector3d p_check = scorpion3_fk(q_sol);
         
-        double residual = (p_des-p_check).norm();
+        // double residual = (p_des-p_check).norm();
 
-        int ret_code;
+        // int ret_code;
 
-        if(residual < 0.01) {
-            ret_code = 0;
-        } else {
-            ret_code = 1;
-        }
+        // if(residual < 0.01) {
+        //     ret_code = 0;
+        // } else {
+        //     ret_code = 1;
+        // }
 
-        IKOutput out_msg;
-        out_msg.q0_target = q_sol(0);
-        out_msg.q1_target = q_sol(1);
-        out_msg.q2_target = q_sol(2);
+        // IKOutput out_msg;
+        // out_msg.q0_target = q_sol(0);
+        // out_msg.q1_target = q_sol(1);
+        // out_msg.q2_target = q_sol(2);
 
-        out_msg.error_code = ret_code;
-        out_msg.residual = residual;
+        // out_msg.error_code = ret_code;
+        // out_msg.residual = residual;
 
-        pub_->publish(out_msg);
+        // pub_->publish(out_msg);
 
-        RCLCPP_INFO(this->get_logger(),
-            "ik ret_code=%d residual=%.5f | joint_angle:[%.3f, %.3f, %.3f]",
-            ret_code, residual, q_sol(0), q_sol(1), q_sol(2));
+        // RCLCPP_INFO(this->get_logger(),
+        //     "ik ret_code=%d residual=%.5f | joint_angle:[%.3f, %.3f, %.3f]",
+        //     ret_code, residual, q_sol(0), q_sol(1), q_sol(2));
     }
 
     rclcpp::Subscription<IKInput>::SharedPtr sub_;
