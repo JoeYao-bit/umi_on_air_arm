@@ -33,6 +33,7 @@
 //     Eigen::Vector3d q_max{ M_PI,  M_PI/2,  M_PI/2};
 
 // };
+// 机械臂参数：3连杆，3个绕Y俯仰旋转关节
 
 struct Scorpion3Param
 {
@@ -40,16 +41,37 @@ struct Scorpion3Param
     double l1{0.18};
     double l2{0.22};
     double l3{0.16};
-    double lg{0.08};
-    inline double L3g() const noexcept { return l3 + lg; }
+
+    // 每个关节独立限位：th1, th2, th3
+    Eigen::Vector3d q_min{-M_PI / 2.0, -M_PI / 2.0, -M_PI / 2.0};
+    Eigen::Vector3d q_max{ M_PI / 2.0,  M_PI / 2.0,  M_PI / 2.0};
 };
 
-// 求解返回状态
+// 正运动学：全部关节点位置输出
+struct Scorpion3AllJointsPos
+{
+    Eigen::Vector3d J1;  // 关节1 肩关节
+    Eigen::Vector3d J2;  // 关节2 肘关节
+    Eigen::Vector3d J3;  // 关节3 腕关节
+    Eigen::Vector3d EE;  // 第三连杆末端执行点
+    double psi;          // 末端绕Y俯仰角 psi = th1+th2+th3
+};
+
+// 简易单末端FK，只返回末端x,z,psi
+struct Scorpion3FKRes
+{
+    double x;
+    double z;
+    double psi;
+    Eigen::Vector3d pos() const { return {x, 0.0, z}; }
+};
+
+// 解析逆解状态
 enum class IK3Status
 {
-    OK,                 ///< 存在满足关节限位的解
-    NO_GEOM_SOLUTION,   ///< 几何工作空间内不存在解
-    NO_VALID_SOLUTION   ///< 几何有解，但全部候选解违反关节限位
+    OK,                 // 存在满足关节限位有效解
+    NO_GEOM_SOLUTION,   // 几何工作空间无解
+    NO_VALID_SOLUTION   // 几何有解，但全部候选解触碰关节限位
 };
 
 struct IK3Result
@@ -58,22 +80,20 @@ struct IK3Result
     IK3Status status;
 };
 
+
+Scorpion3AllJointsPos scorpion3_fk_all_joints(const Eigen::Vector3d& q, const Scorpion3Param& param);
+
+Scorpion3FKRes scorpion3_fk(const Eigen::Vector3d& q, const Scorpion3Param& param);
+
+inline double wrap_to_pi(double angle);
+
+Eigen::Vector3d compute_error(const Scorpion3FKRes& y_act, double xd, double zd, double psid);
+
 IK3Result scorpion3_ik(double xd, double zd, double psid, const Scorpion3Param& param);
 
 Eigen::Vector3d select_nearest_solution(const std::vector<Eigen::Vector3d>& candidates,
                                          const Eigen::Vector3d& q_curr);
 
 
-// 配套正运动学（本构型原版）
-struct Scorpion3FKRes
-{
-    double x;
-    double z;
-    double psi;
-    Eigen::Vector3d pos() const { return {x,0.0,z}; }
-};
-
-Scorpion3FKRes scorpion3_fk(const Eigen::Vector3d& q, const Scorpion3Param& param);
-           
 
 #endif //UMI_ON_AIR_ARM_ARM_3DOF_H
