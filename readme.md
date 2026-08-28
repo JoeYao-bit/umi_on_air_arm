@@ -117,3 +117,16 @@ reach goal position
 正逆运动学算法：git@github.com:JoeYao-bit/umi_on_air_arm.git
 
 消息类型：git@github.com:JoeYao-bit/umi_arm_msg.git
+
+
+启动节点
+ros2 run umi_on_air_arm arm_ik_node
+
+
+另开终端输入测逆运动学，单次
+
+ros2 topic pub /arm_ik_in umi_arm_msg/msg/IKInput "{q0_init: 0.1, q1_init: 0.2, q2_init: 0.15, x_des: 0.35, y_des: 0.0, z_des: 0.25, quaternion: {x: 0.0, y: 0.0998334, z: 0.0, w: 0.995004}}" --once
+
+另开终端输入测正运动学，单次
+
+ros2 topic pub /arm_fk_in umi_arm_msg/msg/FKInput "{q0:0.1, q1:0.2, q2:0.15, q3:0.0}" --once

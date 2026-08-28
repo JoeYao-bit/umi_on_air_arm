@@ -69,9 +69,9 @@ struct Scorpion3FKRes
 // 解析逆解状态
 enum class IK3Status
 {
-    OK,                 // 存在满足关节限位有效解
-    NO_GEOM_SOLUTION,   // 几何工作空间无解
-    NO_VALID_SOLUTION   // 几何有解，但全部候选解触碰关节限位
+    OK = 0,                 // 存在满足关节限位有效解
+    NO_GEOM_SOLUTION = 1,   // 几何工作空间无解
+    NO_VALID_SOLUTION = 2 // 几何有解，但全部候选解触碰关节限位
 };
 
 struct IK3Result
