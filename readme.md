@@ -66,3 +66,15 @@ source /home/agx01/umi_arm_yz_ws/install/setup.bash
 sudo apt install libeigen3-dev cmake libsparsehash-dev libsuitesparse-dev libqglviewer-dev-qt5 qtbase5-dev libqt5opengl5-dev git
 
 
+
+启动节点
+ros2 run umi_on_air_arm arm_ik_node
+
+
+另开终端输入测逆运动学，单次
+
+ros2 topic pub /arm_ik_in umi_arm_msg/msg/IKInput "{q0_init: 0.1, q1_init: 0.2, q2_init: 0.15, x_des: 0.35, y_des: 0.0, z_des: 0.25, quaternion: {x: 0.0, y: 0.0998334, z: 0.0, w: 0.995004}}" --once
+
+另开终端输入测正运动学，单次
+
+ros2 topic pub /arm_fk_in umi_arm_msg/msg/FKInput "{q0:0.1, q1:0.2, q2:0.15, q3:0.0}" --once
