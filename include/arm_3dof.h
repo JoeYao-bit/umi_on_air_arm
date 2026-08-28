@@ -37,10 +37,9 @@
 
 struct Scorpion3Param
 {
-    double l0{0.12};
-    double l1{0.18};
-    double l2{0.22};
-    double l3{0.16};
+    double l1{0.38};
+    double l2{0.41};
+    double l3{0.11};
 
     // 每个关节独立限位：th1, th2, th3
     Eigen::Vector3d q_min{-M_PI / 2.0, -M_PI / 2.0, -M_PI / 2.0};
