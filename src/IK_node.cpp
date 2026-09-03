@@ -93,30 +93,47 @@ private:
     {
         // ========== 10Hz 循环体在这里 ==========
         //RCLCPP_INFO(this->get_logger(), "10Hz tick"); // ok
+        if(end_track_poses_.empty()) {
+            // 没有轨迹点，直接返回
+            return;
+        } else {
+            if(current_tracking_finish_) {
+                if(current_track_index_ == end_track_poses_.size() - 1) {
+                    RCLCPP_INFO(this->get_logger(), "Tracking tasks finished, reset current_track_index_ and clear end_track_poses_");
+                    current_track_index_ = 0;
+                    end_track_poses_.clear();
+                    current_tracking_finish_ = false;
+                    return;
+                } else {
+                    current_track_index_++;
+                    current_tracking_finish_ = false;
+
+                    trackEndPose(end_track_poses_[current_track_index_]);
+                }
+            }
+        }
     }
 
-    void callbackIK(const IKInput::SharedPtr msg)
-    {
-        Eigen::Vector3d q_init(msg->q0_init, msg->q1_init, msg->q2_init);
-        Eigen::Vector3d p_des(msg->x_des, msg->y_des, msg->z_des);
-
+    void trackEndPose(const geometry_msgs::msg::Pose& goal_pose) {
+        double goal_x=goal_pose.position.x, goal_z = goal_pose.position.z;
         tf2::Quaternion tf_q;
-        tf2::fromMsg(msg->quaternion, tf_q);
+        tf2::fromMsg(goal_pose.orientation, tf_q);
         double goal_roll, goal_pitch, goal_yaw;
         tf2::Matrix3x3(tf_q).getRPY(goal_roll, goal_pitch, goal_yaw);
+        trackEndPose(goal_x,goal_z,goal_pitch,goal_roll);
+    }
 
+    // 通过逆运动学从末端位姿结算各个关节角,并发送到机械臂
+    void trackEndPose(float goal_x, float goal_z, float goal_pitch, float goal_roll) {
 
-        RCLCPP_INFO(this->get_logger(),
-            "ik receve init joint angle[%.3f, %.3f, %.3f], targe position[%.3f, %.3f, %.3f], target pitch[%.3f], target RPY[%.3f, %.3f, %.3f]", q_init(0), q_init(1), q_init(2), p_des(0), p_des(1), p_des(2), goal_pitch, goal_roll, goal_yaw);
+        auto ik_res = scorpion3_ik(goal_x, goal_z, goal_pitch, param);
 
-
-        auto ik_res = scorpion3_ik(p_des(0), p_des(2), goal_pitch, param);
         if(ik_res.status == IK3Status::OK)
         {
-
+            Eigen::Vector3d q_init(q0_, q1_, q2_);
             Eigen::Vector3d q_sol = select_nearest_solution(ik_res.candidates, q_init);
             auto fk_res = scorpion3_fk(q_sol, param);
-            Eigen::Vector3d err = compute_error(fk_res, p_des(0), p_des(2), goal_pitch);
+            Eigen::Vector3d err = compute_error(fk_res, goal_x, goal_z, goal_pitch);
             double error = err.norm();
             std::cout << "\nIK‑FK error:" << err.transpose() << "\n";
             IKOutput out_msg;
@@ -140,15 +157,41 @@ private:
             IKOutput out_msg;
             out_msg.error_code = static_cast<int>(ik_res.status);
             pub_ik_->publish(out_msg);
-
+            RCLCPP_INFO(this->get_logger(), "Inverse kinematics failed, terminate current tracking task");
+            current_track_index_ = 0;
+            current_tracking_finish_ = false;
+            end_track_poses_.clear();
         } else if(ik_res.status == IK3Status::NO_VALID_SOLUTION) {
             // 几何上能到，但关节限位卡死，物理硬件无法实现
             std::cout << "几何上能到，但关节限位卡死，物理硬件无法实现" << std::endl;
             IKOutput out_msg;
             out_msg.error_code = static_cast<int>(ik_res.status);
             pub_ik_->publish(out_msg);
+            RCLCPP_INFO(this->get_logger(), "Inverse kinematics failed, terminate current tracking task");
+            current_track_index_ = 0;
+            current_tracking_finish_ = false;
+            end_track_poses_.clear();
         }
 
+    }
+
+    void callbackIK(const IKInput::SharedPtr msg)
+    {
+        Eigen::Vector3d q_init(msg->q0_init, msg->q1_init, msg->q2_init);
+        Eigen::Vector3d p_des(msg->x_des, msg->y_des, msg->z_des);
+
+        q0_ = msg->q0_init, q1_ = msg->q1_init, q2_ = msg->q2_init;
+
+        tf2::Quaternion tf_q;
+        tf2::fromMsg(msg->quaternion, tf_q);
+        double goal_roll, goal_pitch, goal_yaw;
+        tf2::Matrix3x3(tf_q).getRPY(goal_roll, goal_pitch, goal_yaw);
+
+
+        RCLCPP_INFO(this->get_logger(),
+            "ik receve init joint angle[%.3f, %.3f, %.3f], targe position[%.3f, %.3f, %.3f], target pitch[%.3f], target RPY[%.3f, %.3f, %.3f]", q_init(0), q_init(1), q_init(2), p_des(0), p_des(1), p_des(2), goal_pitch, goal_roll, goal_yaw);
+
+        trackEndPose(p_des(0), p_des(2), goal_pitch, goal_roll);
 
     }
 
@@ -189,6 +232,26 @@ private:
     void callbackACFB(const AngleControlFeedBack::SharedPtr msg) {
         RCLCPP_INFO(this->get_logger(),
                 "Angle control feedback received: error_code=%d at %d", msg->error_code, msg->header.stamp.sec);
+        if(msg->error_code == 0) {
+            current_tracking_finish_ = true;
+            RCLCPP_INFO(this->get_logger(), "Current IK task finished successfully.");
+        } else {
+            if(current_track_index_ < end_track_poses_.size()-1) {
+                auto goal_pose = end_track_poses_[current_track_index_];
+                tf2::Quaternion tf_q;
+                tf2::fromMsg(goal_pose.orientation, tf_q);
+                double goal_roll, goal_pitch, goal_yaw;
+                tf2::Matrix3x3(tf_q).getRPY(goal_roll, goal_pitch, goal_yaw);
+
+                RCLCPP_INFO(this->get_logger(), "Current IK task: x,y,z(%.3f,%.3f,%3.f)RPY(%.3f,%.3f,%.3f) failed with joint angles(%.3f,%.3f,%.3f,%.3f), error code: %d, exit current IK task", goal_pose.position.x, goal_pose.position.y, goal_pose.position.z, goal_roll, goal_pitch, goal_yaw, q0_, q1_, q2_, q3_, msg->error_code);
+
+                current_tracking_finish_ = false;
+                current_track_index_ = 0; // Reset the current track index to start from the beginning
+                end_track_poses_.clear(); // Clear the end track poses to exit current IK task
+            } else {
+                RCLCPP_INFO(this->get_logger(), "current_track_index_ > end_track_poses_.size()-1: %i > %i, shouldn't reach here", current_track_index_, end_track_poses_.size()-1);
+            }
+        }
     }
 
     void callbackET(const EndTrack::SharedPtr msg) {
@@ -203,6 +266,11 @@ private:
                 i, pose.position.x, pose.position.y, pose.position.z,
                 roll, pitch, yaw);
         }
+        end_track_poses_ = msg->poses;
+        current_track_index_ = 0;
+        current_tracking_finish_ = false;
+
+        trackEndPose(end_track_poses_[0]);
     }
 
     rclcpp::TimerBase::SharedPtr timer_;
@@ -214,11 +282,16 @@ private:
     rclcpp::Publisher<FKOutput>::SharedPtr pub_fk_;    
 
     rclcpp::Subscription<JointAngles>::SharedPtr sub_ja_;
-    float q0_, q1_, q2_, q3_;
+    float q0_ = 0., q1_ = 0., q2_ = 0., q3_ = 0.; // set default joint angles to all 0
 
     rclcpp::Subscription<AngleControlFeedBack>::SharedPtr sub_acfb_;
 
     rclcpp::Subscription<EndTrack>::SharedPtr sub_et_;
+
+    std::vector<geometry_msgs::msg::Pose> end_track_poses_;
+
+    int current_track_index_ = 0; // current IK task index
+    bool current_tracking_finish_ = false; // track whether finish current IK task
 
 };
 

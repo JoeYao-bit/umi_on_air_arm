@@ -3,83 +3,6 @@
 轨迹生成找王子荣
 关节角度指令执行找张武松
 
-基于acados开发
-
-安装acados教程
-
-## 一、安装步骤
-
-### 1. 系统依赖
-
-```
-sudo apt update
-sudo apt install git cmake gcc gfortran libopenblas-dev liblapack-dev python3-pip python3-venv
-```
-
-### 2. 下载 acados 源码
-
-```
-git clone https://github.com/acados/acados.git
-cd acados
-git submodule update --recursive --init
-```
-
-### 3. 创建虚拟环境（推荐，避免污染系统 python）
-
-```
-python3 -m venv venv_acados
-source venv_acados/bin/activate
-```
-
-### 4. 安装 python 依赖
-
-```
-pip install casadi numpy scipy matplotlib meshcat pinocchio
-pip install -e ./interfaces/acados_template
-```
-
-### 5. Cmake 编译 acados C 库
-
-```
-mkdir build && cd build
-cmake .. -DACADOS_WITH_QPOASES=ON -DACADOS_WITH_HPIPM=ON -DACADOS_WITH_OSQP=ON
-make -j$(nproc)
-```
-
-### 6. 设置环境变量（每次打开终端要 source，或者写到～/.bashrc）
-
-```
-# 在acados根目录执行
-export ACADOS_SOURCE_DIR=$(pwd)
-export LD_LIBRARY_PATH=$ACADOS_SOURCE_DIR/build/lib:$LD_LIBRARY_PATH
-```
-
-> 
-> 写到`~/.bashrc`末尾永久生效：
-
-```
-echo 'export ACADOS_SOURCE_DIR="$HOME/xxx/acados"' >> ~/.bashrc
-echo 'export LD_LIBRARY_PATH=$ACADOS_SOURCE_DIR/build/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
-source ~/.bashrc
-```
-
-✅验证安装
-
-```
-python -c "import acados_template; print('acados import ok')"
-```
-
-臂所在方向为正前方
-
-张武松所使用的系统为ubuntu 22.04，c++代码
-
-
-结果可视化
-
-基于git分享代码
-
-readme介绍基本原理
-
 编译全部包
 
 colcon build
@@ -154,7 +77,13 @@ ros2 topic pub /end_track umi_arm_msg/msg/EndTrack "{header: {stamp: {sec: 0, na
 测试通过
 
 
+工作流程：
 
+1,启动本节点
 
+2,接收到目标轨迹，立即下发第一个位姿对应的关节角。收到机械臂反馈完成后再继续前往下一个末端位姿。
+目标位姿后，立即下发第一个位姿对应的关节角。
 
+3,若机械臂反馈异常，即错误码不为0,则终止轨迹跟踪任务，目标轨迹以及当前任务清零。
 
+4,如果追踪轨迹时求逆解失败，则终止任务并移除目标轨迹和当前进度。
