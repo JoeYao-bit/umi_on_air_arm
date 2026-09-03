@@ -130,3 +130,31 @@ ros2 topic pub /arm_ik_in umi_arm_msg/msg/IKInput "{q0_init: 0.1, q1_init: 0.2, 
 另开终端输入测正运动学，单次
 
 ros2 topic pub /arm_fk_in umi_arm_msg/msg/FKInput "{q0:0.1, q1:0.2, q2:0.15, q3:0.0}" --once
+
+2026.8.29 和张武松正逆运动学测试通过
+
+2026.9.2
+
+发布单次关节角消息,测试用
+
+ros2 topic pub --once /joint_angles umi_arm_msg/msg/JointAngles "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: ''}, q0: 0.0, q1: 1.0, q2: 2.0, q3: 3.0}"
+
+测试通过
+
+发布单次关节角控制完成
+
+ros2 topic pub /angle_control_feedback umi_arm_msg/msg/AngleControlFeedBack "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: ''}, error_code: 0}" --once
+
+测试通过
+
+发布单次末端轨迹与接收
+
+ros2 topic pub /end_track umi_arm_msg/msg/EndTrack "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: 'world'}, poses: [{position: {x:0.2, y:0.3, z:0.5}, orientation: {x:0.0, y:0.0, z:0.0, w:1.0}}, {position: {x:0.4, y:0.1, z:0.5}, orientation: {x:0.0, y:0.0, z:0.0, w:1.0}}]}" --once
+
+测试通过
+
+
+
+
+
+
