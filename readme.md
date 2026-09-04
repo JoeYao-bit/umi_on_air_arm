@@ -129,4 +129,25 @@ x,z,pitch,roll
 
 0.52, 0.3825，0,0
 
+@张武松提供的机械臂控制接口
+### 使用说明
+#### 1、启动方式
+```
+python3 /home/agx01/zws_ws/DynamixelSDK-4.0.5/python/tests/motor_test/fast_sync_read_ros.py
+```
+启动后记录【启动位置】，运行到【零位】，此时正逆运动学相关逻辑生效，按ESC或CTRLl+C，恢复到【启动位置】
+#### 2、关节软限位
+关节限位，单位rad
+ [
+    [-0.8477, 1.3004],   # q0
+    [-1.7683, 1.1469],   # q1
+    [-1.9218, 1.6072],   # q2
+    [-1.4615, 1.6072]    # q3
+]
+#### 3、修改关节速度上限
+```
+#速度默认为10，可修改范围：0 ~ 32767，0代表最大
+#定义：value*0.229 [rev/min]
 
+ros2 topic pub --once /motor_set_profile_velocity std_msgs/msg/Int32 '{data: 30}'
+```
