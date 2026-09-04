@@ -40,6 +40,8 @@ ament_target_dependencies(arm_ik_node
   tf2_geometry_msgs
 )
 
+ament_export_dependencies(tf2_geometry_msgs)
+
 install(TARGETS
   arm_ik_node
   DESTINATION lib/${PROJECT_NAME}

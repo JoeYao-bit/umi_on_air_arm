@@ -13,6 +13,7 @@
 #include <vector>
 #include <cmath>
 
+
 /**
  * UMI‑on‑Air scorpion arm: ONLY 3 pitch joints θ1,θ2,θ3
  * remove wrist roll joint4.
@@ -42,8 +43,10 @@ struct Scorpion3Param
     double l3{0.11};
 
     // 每个关节独立限位：th1, th2, th3
-    Eigen::Vector3d q_min{-M_PI / 2.0, -M_PI / 2.0, -M_PI / 2.0};
-    Eigen::Vector3d q_max{ M_PI / 2.0,  M_PI / 2.0,  M_PI / 2.0};
+    Eigen::Vector3d q_min{-0.8477, -1.7683, -1.9218};
+    Eigen::Vector3d q_max{ 1.3004,  1.1469,  1.6072};
+
+    double q4_min = -1.4615f, q4_max = 1.6072f; //机械臂最后一个扭转电机关节限位
 };
 
 // 正运动学：全部关节点位置输出
@@ -92,7 +95,6 @@ IK3Result scorpion3_ik(double xd, double zd, double psid, const Scorpion3Param& 
 
 Eigen::Vector3d select_nearest_solution(const std::vector<Eigen::Vector3d>& candidates,
                                          const Eigen::Vector3d& q_curr);
-
 
 
 #endif //UMI_ON_AIR_ARM_ARM_3DOF_H

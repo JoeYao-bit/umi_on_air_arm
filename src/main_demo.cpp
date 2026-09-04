@@ -14,7 +14,14 @@ bool draw_joint = true;
 bool draw_bar = true;
 bool draw_goal = true;
 
-Eigen::Vector3d joint_angles{0., 0., 0.}; // init angle
+// q0: -0.5976314229735039
+// q1: 0.5209136536572654
+// q2: 0.27541679184529944
+// q3: -0.04986655005555513
+
+// Eigen::Vector3d joint_angles{-0.5976314229735039, 0.5209136536572654, 0.27541679184529944}; // init angle
+
+Eigen::Vector3d joint_angles{0, 0, 0};
 
 Canvas canvas("UMI-Arm visualize", 20, 20, 10, 40);
 
