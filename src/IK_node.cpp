@@ -130,7 +130,7 @@ private:
 
         if(ik_res.status == IK3Status::OK)
         {
-            Eigen::Vector3d q_init(q0_, q1_, q2_);
+            Eigen::Vector3d q_init(q0_, q1_, q2_); // 选择距离当前关节角最近的角度
             Eigen::Vector3d q_sol = select_nearest_solution(ik_res.candidates, q_init);
             auto fk_res = scorpion3_fk(q_sol, param);
             Eigen::Vector3d err = compute_error(fk_res, goal_x, goal_z, goal_pitch);

@@ -87,3 +87,67 @@ ros2 topic pub /end_track umi_arm_msg/msg/EndTrack "{header: {stamp: {sec: 0, na
 3,若机械臂反馈异常，即错误码不为0,则终止轨迹跟踪任务，目标轨迹以及当前任务清零。
 
 4,如果追踪轨迹时求逆解失败，则终止任务并移除目标轨迹和当前进度。
+
+通信协议
+全部信息收发通过消息-话题机制实现。
+相关代码位于umi_on_air_arm/src/IK_node.cpp
+消息文件定义位于umi_arm_msg/msg文件夹
+|话题| 消息类型| 含义|
+|----|----|----|
+|/end_track | EndTrack|目标机械臂末端轨迹，由多个位姿组成，位姿之间应尽可能接近，使得关节角平稳变化 |
+|/angle_control_feedback|AngleControlFeedBack|反馈机械臂是否执行到下发关节角，如果失败则包括失败原因|
+|/joint_angles|JointAngles|机械臂传给轨迹跟踪节点的当前关节角，逆运动学解会尽量靠近当前关节角|
+|/arm_fk_in|FKInput|机械臂正运动学输入，包含四个关节角|
+|/arm_fk_out|FKOutput|机械臂正运动学输出，输出一个末端位姿|
+|/arm_ik_in|IKInput|机械臂逆运动学输入，包含一个末端位姿|
+|/arm_ik_out|IKOutput|机械臂逆运动学输出，并控制机械臂到逆解对应的关节角|
+
+示教轨迹：
+往前伸再缩回去
+
+x,z,pitch,roll
+
+0.52, 0.3825，0,0
+
+0.595, 0.3575，0,0
+
+0.6575, 0.325，0, 0
+
+0.595, 0.3575，0,0
+
+0.52, 0.3825，0,0
+
+using Pose = geometry_msgs::msg::Pose;
+    std::vector<std::tuple<double,double,double,double>> data = {
+        {0.52,   0.3825, 0.0, 0.0},
+        {0.595,  0.3575, 0.0, 0.0},
+        {0.6575, 0.325,  0.0, 0.0},
+        {0.595,  0.3575, 0.0, 0.0},
+        {0.52,   0.3825, 0.0, 0.0},
+    };
+
+    std::vector<Pose> poses;
+    poses.reserve(data.size());
+    for(auto &item : data)
+    {
+        double x = std::get<0>(item);
+        double z = std::get<1>(item);
+        double pitch = std::get<2>(item);
+        double roll  = std::get<3>(item);
+
+        Pose p;
+        p.position.x = x;
+        p.position.y = 0.0;
+        p.position.z = z;
+
+        tf2::Quaternion q;
+        // rpy: roll(X), pitch(Y), yaw(Z)
+        q.setRPY(roll, pitch, 0.0);
+        p.orientation.x = q.x();
+        p.orientation.y = q.y();
+        p.orientation.z = q.z();
+        p.orientation.w = q.w();
+
+        poses.push_back(p);
+    }
+
