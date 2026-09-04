@@ -13,6 +13,7 @@
 #include <vector>
 #include <cmath>
 
+
 /**
  * UMI‑on‑Air scorpion arm: ONLY 3 pitch joints θ1,θ2,θ3
  * remove wrist roll joint4.
@@ -94,7 +95,6 @@ IK3Result scorpion3_ik(double xd, double zd, double psid, const Scorpion3Param& 
 
 Eigen::Vector3d select_nearest_solution(const std::vector<Eigen::Vector3d>& candidates,
                                          const Eigen::Vector3d& q_curr);
-
 
 
 #endif //UMI_ON_AIR_ARM_ARM_3DOF_H

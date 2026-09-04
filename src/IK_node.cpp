@@ -26,6 +26,48 @@ using AngleControlFeedBack = umi_arm_msg::msg::AngleControlFeedBack; // 臂控�
 
 using EndTrack = umi_arm_msg::msg::EndTrack; // 目标臂末端轨迹，追踪目标
 
+
+std::vector<std::vector<double>> demo_track_x_z_pitch_roll = {
+    {0.52, 0.3825, 0, 0},
+    {0.595, 0.3575, 0, 0},
+    {0.6575, 0.325, 0, 0},
+    {0.595, 0.3575, 0, 0},
+    {0.52, 0.3825, 0, 0}
+};
+
+geometry_msgs::msg::Pose create_pose_msg(double x, double y, double z, double roll, double pitch, double yaw) {
+    
+    geometry_msgs::msg::Pose pose_msg;
+    pose_msg.position.x = x;
+    pose_msg.position.y = y;
+    pose_msg.position.z = z;
+
+    tf2::Quaternion tf_q;
+    tf_q.setRPY(roll, pitch, yaw);
+    pose_msg.orientation = tf2::toMsg(tf_q);
+
+    return pose_msg;
+}
+
+
+std::vector<geometry_msgs::msg::Pose> create_end_track_msg(std::vector<std::vector<double>>& x_z_pitch_roll_list) {
+    
+    std::vector<geometry_msgs::msg::Pose> poses;
+    for (const auto& point : x_z_pitch_roll_list) {
+        if (point.size() != 4) {
+            throw std::invalid_argument("Each point must contain exactly 4 elements: x, z, pitch, roll.");
+        }
+        double x = point[0];
+        double z = point[1];
+        double pitch = point[2];
+        double roll = point[3];
+        double yaw = 0.0;
+        geometry_msgs::msg::Pose pose_msg = create_pose_msg(x, 0.0, z, roll, pitch, yaw);
+        poses.push_back(pose_msg);
+    }
+    return poses;
+}
+
 Scorpion3Param param;
 
 class ArmIkTopicNode : public rclcpp::Node
@@ -84,6 +126,11 @@ public:
             std::chrono::milliseconds(100),   // 周期，100毫秒 =10Hz
             std::bind(&ArmIkTopicNode::timer_callback, this)
         );
+
+        // debug only, create demo end track 
+        //end_track_poses_ = create_end_track_msg(demo_track_x_z_pitch_roll);
+        //trackEndPose(end_track_poses_[0]);
+
     }
 
 private:
@@ -99,7 +146,7 @@ private:
         } else {
             if(current_tracking_finish_) {
                 if(current_track_index_ == end_track_poses_.size() - 1) {
-                    RCLCPP_INFO(this->get_logger(), "Tracking tasks finished, reset current_track_index_ and clear end_track_poses_");
+                    RCLCPP_INFO(this->get_logger(), "All tracking tasks finished, reset current_track_index_ and clear end_track_poses_");
                     current_track_index_ = 0;
                     end_track_poses_.clear();
                     current_tracking_finish_ = false;
@@ -126,6 +173,8 @@ private:
     // 通过逆运动学从末端位姿结算各个关节角,并发送到机械臂
     void trackEndPose(float goal_x, float goal_z, float goal_pitch, float goal_roll) {
 
+        RCLCPP_INFO(this->get_logger(), "trackEndPose: goal_x=%.3f, goal_z=%.3f, goal_pitch=%.3f, goal_roll=%.3f", goal_x, goal_z, goal_pitch, goal_roll);
+
         auto ik_res = scorpion3_ik(goal_x, goal_z, goal_pitch, param);
 
         if(ik_res.status == IK3Status::OK)
@@ -135,7 +184,8 @@ private:
             auto fk_res = scorpion3_fk(q_sol, param);
             Eigen::Vector3d err = compute_error(fk_res, goal_x, goal_z, goal_pitch);
             double error = err.norm();
-            std::cout << "\nIK‑FK error:" << err.transpose() << "\n";
+            std::stringstream ss; ss << err.transpose();
+            RCLCPP_INFO(this->get_logger(), "IK‑FK error: %s", ss.str().c_str());
             IKOutput out_msg;
             out_msg.q0_target = q_sol(0);
             out_msg.q1_target = q_sol(1);
@@ -153,7 +203,7 @@ private:
                 ik_res.status, error, q_sol(0), q_sol(1), q_sol(2), goal_roll);
         } else if(ik_res.status == IK3Status::NO_GEOM_SOLUTION) {
             // 目标超出臂工作空间，几何上就不可能到达
-            std::cout << "目标超出臂工作空间，几何上就不可能到达" << std::endl;
+            RCLCPP_INFO(this->get_logger(), "目标超出臂工作空间，几何上就不可能到达");
             IKOutput out_msg;
             out_msg.error_code = static_cast<int>(ik_res.status);
             pub_ik_->publish(out_msg);
@@ -163,7 +213,7 @@ private:
             end_track_poses_.clear();
         } else if(ik_res.status == IK3Status::NO_VALID_SOLUTION) {
             // 几何上能到，但关节限位卡死，物理硬件无法实现
-            std::cout << "几何上能到，但关节限位卡死，物理硬件无法实现" << std::endl;
+            RCLCPP_INFO(this->get_logger(), "几何上能到，但关节限位卡死，物理硬件无法实现");
             IKOutput out_msg;
             out_msg.error_code = static_cast<int>(ik_res.status);
             pub_ik_->publish(out_msg);
@@ -244,6 +294,8 @@ private:
                 tf2::Matrix3x3(tf_q).getRPY(goal_roll, goal_pitch, goal_yaw);
 
                 RCLCPP_INFO(this->get_logger(), "Current IK task: x,y,z(%.3f,%.3f,%3.f)RPY(%.3f,%.3f,%.3f) failed with joint angles(%.3f,%.3f,%.3f,%.3f), error code: %d, exit current IK task", goal_pose.position.x, goal_pose.position.y, goal_pose.position.z, goal_roll, goal_pitch, goal_yaw, q0_, q1_, q2_, q3_, msg->error_code);
+
+                RCLCPP_INFO(this->get_logger(), "Reset current_track_index_ and clear end_track_poses_");
 
                 current_tracking_finish_ = false;
                 current_track_index_ = 0; // Reset the current track index to start from the beginning

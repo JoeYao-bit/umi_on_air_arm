@@ -76,6 +76,18 @@ ros2 topic pub /end_track umi_arm_msg/msg/EndTrack "{header: {stamp: {sec: 0, na
 
 测试通过
 
+上一个轨迹是为验证流程的虚假轨迹，机械臂不一定能执行。
+换成
+
+ros2 topic pub /end_track umi_arm_msg/msg/EndTrack "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: 'world'}, poses: [
+{position: {x: 0.52, y: 0.0, z: 0.3825}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}},
+{position: {x: 0.595, y: 0.0, z: 0.3575}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}},
+{position: {x: 0.6575, y: 0.0, z: 0.325}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}},
+{position: {x: 0.595, y: 0.0, z: 0.3575}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}},
+{position: {x: 0.52, y: 0.0, z: 0.3825}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}}
+]}" --once
+
+机械臂能执行
 
 工作流程：
 
@@ -117,37 +129,4 @@ x,z,pitch,roll
 
 0.52, 0.3825，0,0
 
-using Pose = geometry_msgs::msg::Pose;
-    std::vector<std::tuple<double,double,double,double>> data = {
-        {0.52,   0.3825, 0.0, 0.0},
-        {0.595,  0.3575, 0.0, 0.0},
-        {0.6575, 0.325,  0.0, 0.0},
-        {0.595,  0.3575, 0.0, 0.0},
-        {0.52,   0.3825, 0.0, 0.0},
-    };
-
-    std::vector<Pose> poses;
-    poses.reserve(data.size());
-    for(auto &item : data)
-    {
-        double x = std::get<0>(item);
-        double z = std::get<1>(item);
-        double pitch = std::get<2>(item);
-        double roll  = std::get<3>(item);
-
-        Pose p;
-        p.position.x = x;
-        p.position.y = 0.0;
-        p.position.z = z;
-
-        tf2::Quaternion q;
-        // rpy: roll(X), pitch(Y), yaw(Z)
-        q.setRPY(roll, pitch, 0.0);
-        p.orientation.x = q.x();
-        p.orientation.y = q.y();
-        p.orientation.z = q.z();
-        p.orientation.w = q.w();
-
-        poses.push_back(p);
-    }
 

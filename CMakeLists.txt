@@ -44,6 +44,8 @@ ament_target_dependencies(arm_ik_node
   tf2_geometry_msgs
 )
 
+ament_export_dependencies(tf2_geometry_msgs)
+
 install(TARGETS
   main_demo  
   arm_ik_node
